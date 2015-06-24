@@ -20,9 +20,27 @@ app.use(expressSession({
 app.use(passport.initialize());
 app.use(passport.session());
 
+passport.use(new passportLocal.Strategy(function(username, password, done){
+    // pretend this is using a real database
+    if(username === password){
+        done(null, {id: username, name: username});
+    } else {
+        done(null, null);
+    }
+}));
+
+passport.serializeUser(function(user, done){
+    done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done){
+   // Query database or cache here
+   done(null, {id: id, name: id});
+});
+
 app.get('/', function(req, res){
    res.render('index', {
-       isAuthenticated: false,
+       isAuthenticated: req.isAuthenticated(),
        user: req.user
    }); 
 });
@@ -31,8 +49,13 @@ app.get('/login', function(req, res){
    res.render('login'); 
 });
 
-app.post('/login', function(req, res){
-    
+app.post('/login', passport.authenticate('local'), function(req, res){
+    res.redirect('/');
+});
+
+app.get('/logout', function(req, res){
+   req.logout();
+   res.redirect('/');
 });
 
 var port = process.env.PORT || 3000;
