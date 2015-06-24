@@ -4,6 +4,10 @@
         <title>Passport</title>
     </head>
     <body>
-        Hello, World
+        <% if(!isAuthenticated) { %>
+            <a href="/login">Log in here</a>
+        <% } else { %>
+            Hello, <%= user.name %>
+        <% } %>
     </body>
 </html>
