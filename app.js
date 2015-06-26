@@ -5,6 +5,7 @@ var expressSession = require("express-session");
 
 var passport = require('passport');
 var passportLocal = require('passport-local');
+var passportHttp = require('passport-http');
 
 var app = express();
 
@@ -29,6 +30,15 @@ passport.use(new passportLocal.Strategy(function(username, password, done){
     }
 }));
 
+passport.use(new passportHttp.BasicStrategy(function(username, password, done){
+    // pretend this is using a real database
+    if(username === password){
+        done(null, {id: username, name: username});
+    } else {
+        done(null, null);
+    }
+}));
+
 passport.serializeUser(function(user, done){
     done(null, user.id);
 });
@@ -37,6 +47,14 @@ passport.deserializeUser(function(id, done){
    // Query database or cache here
    done(null, {id: id, name: id});
 });
+
+function ensureAuthenticated(req, res, next){
+    if(req.isAuthenticated()){
+        next();
+    } else {
+        res.send(403);
+    }
+}
 
 app.get('/', function(req, res){
    res.render('index', {
@@ -57,6 +75,19 @@ app.get('/logout', function(req, res){
    req.logout();
    res.redirect('/');
 });
+
+// for any api call use the basic http auth from passport-http
+app.use('/api', passport.authenticate('basic', {session: false}));
+
+app.get('/api/data', ensureAuthenticated, function(req, res){
+   res.json([
+       {value: 'foo'},
+       {value: 'bar'},
+       {value: 'baz'}
+   ]);
+});
+
+
 
 var port = process.env.PORT || 3000;
 
